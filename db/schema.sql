@@ -1,6 +1,19 @@
 -- this will delete tables everytime migrate script is run
 DROP TABLE IF EXISTS parties;
 DROP TABLE IF EXISTS candidates;
+DROP TABLE IF EXISTS votes;
+
+CREATE TABLE votes (
+  id INTEGER PRIMARY KEY,
+  voter_id INTEGER UNSIGNED NOT NULL,
+  candidate_id INTEGER UNSIGNED NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+--   voter ID must be unique
+  CONSTRAINT uc_voter UNIQUE (voter_id),
+--   this will delete entire row
+  CONSTRAINT fk_voter FOREIGN KEY (voter_id) REFERENCES voters(id) ON DELETE CASCADE,
+  CONSTRAINT fk_candidate FOREIGN KEY (candidate_id) REFERENCES candidates(id) ON DELETE CASCADE
+);
 
 CREATE TABLE voters (
     id INTEGER PRIMARY KEY,
