@@ -102,50 +102,85 @@ app.post('/api/candidate', ({ body }, res) => {
         });
     });
 });
-    // this will run select query and display all of the seeds array of objects
-    // db.all('SELECT * FROM candidates', (err, rows) => {
-    //     console.log(rows);
-    // });
 
-    // get a single candidate
-    // db.get('SELECT * FROM candidates WHERE id = 1', (err, row) =>{
-    //     if (err){
-    //         console.log(err);
-    //     }
-    //     console.log(row);
-    // });
-
-    // Delete a candidate
-    // db.run(`DELETE FROM candidates WHERE id = ?`, 1, function(err, result) {
-    //     if (err) {
-    //       console.log(err);
-    //     }
-    //     console.log(result, this, this.changes);
-    //   });
-
-    // // Create a candidate
-    // const sql = `INSERT INTO candidates (id, first_name, last_name, industry_connected) VALUES (?,?,?,?)`;
-    // const params = [1, 'Ronald', "Firbank", 1];
-
-    // db.run(sql, params, function(err, result) {
-    //     if (err){
-    //         console.log(err);
-    //     }
-    //     console.log(result, this.lastID);
-    // })
-
-
-    // this always has to be at the bottom or it will run first 
-    app.use((req, res) => {
-        res.status(404).end();
+app.get('/api/parties', (req, res) => {
+    const sql = `SELECT * FROM parties`;
+    const params = [];
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: rows
+        });
     });
+});
 
-
-
-    // start server after database is connected
-    db.on('open', () => {
-        app.listen(PORT, () => {
-            console.log(`Server running at http://localhost:${PORT}`);
-
-        })
+app.get('/api/party/:id', (req, res) => {
+    const sql = `SELECT * FROM parties WHERE id = ?`;
+    const params = [req.params.id];
+    db.get(sql, params, (err, row) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: row
+        });
     });
+});
+
+app.delete('/api/party/:id', (req, res) => {
+    const sql = `DELETE FROM parties WHERE id = ?`;
+    const params = [req.params.id];
+    db.run(sql, params, function (err, result) {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({ message: 'sucessfully deleted', changes: this.changes });
+    });
+});
+
+// this will update candidate where party changed
+app.put('/api/candidate/:id', (req, res) =>{
+    // this will run inputCheck to verify a party id was entered
+    const errors = inputCheck(req.body, 'party_id');
+        if(errors){
+            res.status(400).json({error : errors});
+            return;
+        }
+
+    const sql = `UPDATE candidates SET party_id = ?
+                WHERE id = ?`;
+    const params = [req.body.party_id, req.params.id];
+    db.run(sql, params, function(err, result) {
+        if(err){
+            res.status(400).json({error: err.message});
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: req.body,
+            changes: this.changes
+        });
+    });
+});
+
+// this always has to be at the bottom or it will run first 
+app.use((req, res) => {
+    res.status(404).end();
+});
+
+
+
+// start server after database is connected
+db.on('open', () => {
+    app.listen(PORT, () => {
+        console.log(`Server running at http://localhost:${PORT}`);
+
+    })
+});
